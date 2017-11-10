@@ -2,12 +2,16 @@ FROM ubuntu:xenial
 MAINTAINER yinglilu@gmail.com
 
 #PACS parameters
-ARG AETITLE=YINGLILU
+#lisener AE title
+ARG AETITLE=BIDSDUMP
+#licener port
 ARG PORT=11116
+#dicom output to here
 ARG ROOTPATH=/data
+#git clone from this branch
+ARG BRANCH=isolove
 
-#COPY storescp.py /
-#docker run --volume /data:/data --restart=always --net=host --expose=11116 dcmrcvr python /opt/dcmrcvr/server.py
+#can be modified when do docker build, for instance, --build-arg BRANCH=isolove
 
 RUN apt-get update && apt-get install -y build-essential \
                                           cmake  \
@@ -27,6 +31,7 @@ RUN apt-get update && apt-get install -y build-essential \
                                           python2.7 \
                                           python-pip
 
+#RUN apt-get install -y ssh nmap
 RUN pip install -U pip setuptools
 
 #install MsSQL-python
@@ -44,7 +49,6 @@ RUN git clone https://github.com/yinglilu/pynetdicom
 WORKDIR pynetdicom
 RUN python setup.py install
 
-
 #install PyYAML
 RUN pip install PyYAML==3.11
 
@@ -53,11 +57,9 @@ RUN pip install scandir==1.3
 
 #install dcmrcvr
 WORKDIR /opt
-RUN git clone https://gitlab.com/cfmm/dcmrcvr.git 
-WORKDIR dcmrcvr
+RUN git clone -b $BRANCH https://gitlab.com/cfmm/dcmrcvr.git 
 
-RUN mkdir -p $ROOTPATH
-
+#RUN mkdir -p $ROOTPATH
 
 RUN printf \
 "AETITLE             : \"$AETITLE\"\n\
@@ -68,8 +70,6 @@ LOGLEVEL            : \"WARN\"\n\
 LOGFILE             : server.log"\
 >> /opt/dcmrcvr/config.yml
 
-ENV PATH=/opt/dcmrcvr/:$PATH
-
-ENTRYPOINT ["/usr/bin/python","/opt/dcmrcvr/server.py"]
+CMD ["/usr/bin/python","/opt/dcmrcvr/server.py"]
 
 
